@@ -1,0 +1,20 @@
+{
+  "name": "cot-widget-spike",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "INPUT=mcp-app.html vite build",
+    "serve": "node server.js",
+    "serve:http": "node server.js --http"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "vite": "^8.2.1",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}
