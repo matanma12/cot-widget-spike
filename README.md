@@ -1,45 +1,48 @@
-# CoT widget spike — MCP App in Claude Code
+# CoT Reasoning Map
 
-Minimal MCP App (SEP-1865) proving the inline-widget path for the CoT-visualization product.
-One tool, `show_reasoning_map`, returns a sample chain-of-thought trace; the attached
-`ui://cot-spike/mcp-app.html` resource renders it as an interactive move-map
-(click a move → original CoT excerpt; button → live `callServerTool` round-trip).
+Learn from Claude's chain of thought. An MCP App (SEP-1865) for Claude Code that turns
+extended-thinking traces into interactive **reasoning maps** — typed moves (framing,
+hypothesis, verification, backtrack, self-correction, insight, action, conclusion) laid
+out as a graph with dependency and discard edges, an effort timeline, replay mode, and
+click-through to the verbatim CoT excerpts.
 
-## Layout
-- `server.js` — MCP server (stdio by default, `--http` for Streamable HTTP on :3001)
-- `mcp-app.html` + `src/mcp-app.js` — widget, uses `App` from `@modelcontextprotocol/ext-apps`
-- `dist/mcp-app.html` — single-file bundle (vite-plugin-singlefile); rebuild with `npm run build`
-- `test-client.js` — protocol smoke test: `node test-client.js`
+No API key needed: the Claude session you're already running does the annotation.
 
-## Verified so far
-- Tool advertises `_meta.ui.resourceUri` (SDK also emits legacy `ui/resourceUri`)
-- Resource serves `text/html;profile=mcp-app` (323 KB bundled)
-- Tool result carries text (model/CLI fallback) + `structuredContent` (widget data)
-- Registered in Claude Code user scope: `claude mcp add cot-spike -- node .../server.js` → Connected
+## How it works
 
-## Spike result (2026-08-18)
+1. `list_sessions` — finds recent Claude Code transcripts (`~/.claude/projects/**/*.jsonl`) containing thinking blocks
+2. `get_thinking` — extracts the numbered thinking blocks + tool-call skeleton from a session
+3. The calling Claude annotates the thinking into typed moves with verbatim excerpts
+4. `show_reasoning_map` — renders the moves as an interactive widget inline in the chat
+   (Claude Code desktop app / claude.ai; text fallback in the terminal CLI)
 
-- **Claude Code desktop does NOT render the MCP App inline.** Test 1 ran (new session,
-  "Call show_reasoning_map from cot-spike"): tool call succeeded, no widget — chat text only.
-- Fallback detail: the model received the tool result as the raw `structuredContent` JSON,
-  not the `content` text block. So the CLI/desktop harness prefers structuredContent when present.
-- Server-side wiring is confirmed good (tool advertises `_meta.ui.resourceUri`, resource serves
-  the mcp-app profile) — the desktop host simply doesn't fetch/render the UI resource yet.
-- Docs check (2026-08-18): the official MCP client support matrix
-  (modelcontextprotocol.io/extensions/client-matrix) lists claude.ai and Claude Desktop as
-  MCP Apps hosts; **Claude Code is absent entirely** (desktop, CLI, IDE). No flag/version gates it.
-  Open GH issue confirms the Cowork renderer gap; a closed-not-planned issue reports claude.ai
-  custom REMOTE connectors sometimes fail to render too — tunnel test is not a sure thing.
-- Best next test: Claude Desktop (chat app) with this same stdio server via
-  claude_desktop_config.json — it's on the support matrix and needs no tunnel.
+Say things like: *"map the reasoning of my last session"* or *"show me a demo reasoning map"*
+(no-args call renders sample data).
 
-## To test rendering
-1. **Claude Code desktop**: start a NEW session (server was added after this one began),
-   ask: "Call show_reasoning_map from cot-spike". Does a widget render inline, or text?
-2. **CLI**: run `claude` in a logged-in terminal, same prompt. Expect text fallback.
-3. **claude.ai (web)**: `npm run serve:http`, then `npx cloudflared tunnel --url http://localhost:3001`,
-   add the tunnel URL as a custom connector (Settings → Connectors). Confirmed MCP Apps surface.
+## Install
 
-## Open questions this spike answers empirically
-- Does Claude Code desktop (Cowork) render MCP Apps, or only claude.ai/Claude Desktop chat?
-- What exactly does the CLI show as fallback (text block? resource link?)
+Requires Node 18+.
+
+```bash
+git clone https://github.com/matanma12/cot-widget-spike.git
+cd cot-widget-spike
+npm install && npm run build
+claude mcp add cot-spike --scope user -- node "$(pwd)/server.js"
+```
+
+Restart Claude Code and ask for a reasoning map.
+
+## Development
+
+- `server.js` — MCP server (stdio; `npm run serve:http` for Streamable HTTP on :3001)
+- `mcp-app.html` + `src/mcp-app.js` — the widget (`App` from `@modelcontextprotocol/ext-apps`)
+- `npm run build` — bundles to `dist/mcp-app.html` (vite-plugin-singlefile)
+- `node test-client.js` — protocol smoke test over stdio
+
+## Status / roadmap
+
+Working: ingestion, host-model annotation loop, graph + timeline + replay + excerpts,
+verified inline rendering in Claude Code desktop. Next: live session following via hooks,
+pattern library across traces, predict-the-next-move replay, claude.ai deployment.
+
+MIT licensed.
