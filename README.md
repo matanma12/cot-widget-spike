@@ -1,59 +1,36 @@
 # CoT Reasoning Map
 
-Learn from Claude's chain of thought. An MCP App (SEP-1865) for Claude Code that turns
-extended-thinking traces into interactive **reasoning maps** — typed moves (framing,
-hypothesis, verification, backtrack, self-correction, insight, action, conclusion) laid
-out as a graph with dependency and discard edges, an effort timeline, replay mode, and
-click-through to the verbatim CoT excerpts.
+**See your agent think, live.** A local companion for Claude Code that draws the
+chain of thought as it happens: a real-time **reasoning map** of typed moves —
+framing, hypothesis, verification, backtrack, self-correction, insight, action,
+conclusion — laid out as a graph with dependency and discard edges, an effort
+timeline, and click-through to the verbatim thinking excerpts.
 
-No API key needed: the Claude session you're already running does the annotation.
+Start it once, keep the tab open, and every Claude Code session on your machine
+becomes watchable — no configuration inside Claude Code, no API key required.
 
-## How it works
-
-1. `list_sessions` — finds recent Claude Code transcripts (`~/.claude/projects/**/*.jsonl`) containing thinking blocks
-2. `get_thinking` — extracts the numbered thinking blocks + tool-call skeleton from a session
-3. The calling Claude annotates the thinking into typed moves with verbatim excerpts
-4. `show_reasoning_map` — renders the moves as an interactive widget inline in the chat
-   (Claude Code desktop app / claude.ai; text fallback in the terminal CLI)
-
-Say things like: *"map the reasoning of my last session"* or *"show me a demo reasoning map"*
-(no-args call renders sample data).
-
-## Live mode
-
-Watch the reasoning map grow in real time while a Claude Code session runs:
+## Live mode (the product)
 
 ```bash
 npm run live
 ```
 
-Open http://localhost:4173. The watcher follows whichever session is most recently
-active (pin one with `FOLLOW=/path/to/session.jsonl npm run live`). New thinking
-blocks are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
-no API key, no latency. The widget and the live page share one renderer (`src/map-core.js`).
+Open http://localhost:4173. A file watcher on `~/.claude/projects` follows whichever
+session is most recently active and streams new thinking blocks to the page over SSE.
+Moves are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
+zero latency, zero cost. Pin a specific session with
+`FOLLOW=/path/to/session.jsonl npm run live`.
 
 ### LLM-grade refinement (optional)
 
-Export `ANTHROPIC_API_KEY` before `npm run live` and the live map upgrades itself:
+Export `ANTHROPIC_API_KEY` before `npm run live` and the map upgrades itself:
 heuristic moves appear instantly, then ~6s after the session goes quiet a Claude Haiku
 pass re-annotates the full trace with proper move boundaries, dependency edges, and
 verbatim excerpts (forced structured output, `src/llm-annotate.js`). The page badge
 shows `heuristic` vs `✦ LLM-refined`. Without a key everything works as before.
-Also upgrades the pattern-library corpus: `npm run backfill -- --llm`.
 Model override: `COT_REFINE_MODEL` (default `claude-haiku-4-5`, ~$1/$5 per MTok).
 
 Privacy note: refinement sends thinking text to the Anthropic API under your key.
-
-## Pattern library
-
-Every rendered or live-watched trace is saved to `~/.claude/cot-maps/traces/`. The
-library mines them for named reasoning shapes — evidence loop, hypothesis elimination,
-verify-before-commit, and anti-patterns like leap-of-faith — each with a learning note
-and real examples from your own sessions.
-
-- Ask Claude: *"show my reasoning pattern library"* (inline widget via `show_pattern_library`)
-- Seed it from your whole session history: `npm run backfill`
-- Pattern chips on every reasoning map highlight where a pattern occurs — click to see the span
 
 ## Install
 
@@ -63,25 +40,56 @@ Requires Node 18+.
 git clone https://github.com/matanma12/cot-widget-spike.git
 cd cot-widget-spike
 npm install && npm run build
+npm run live
+```
+
+## Inline maps in the chat (MCP App)
+
+The same renderer also ships as an MCP App (SEP-1865) so Claude can draw a reasoning
+map *inline in the conversation* — useful for post-hoc analysis of a finished session:
+
+```bash
 claude mcp add cot-spike --scope user -- node "$(pwd)/server.js"
 ```
 
-Restart Claude Code and ask for a reasoning map.
+Restart Claude Code, then say *"map the reasoning of my last session"*. The flow:
+`list_sessions` finds transcripts with thinking blocks → `get_thinking` extracts them →
+the calling Claude annotates the moves itself (no API key) → `show_reasoning_map`
+renders the widget (Claude Code desktop app / claude.ai; text fallback in the CLI).
+
+## Under the hood: trace store & patterns
+
+Every watched or rendered trace is saved to `~/.claude/cot-maps/traces/`, and a
+pattern engine (`src/patterns.js`) tags named reasoning shapes — evidence loop,
+hypothesis elimination, verify-before-commit, anti-patterns like leap-of-faith.
+Pattern chips on each map highlight where a shape occurs; *"show my reasoning
+pattern library"* renders the cross-trace view; `npm run backfill` (add `--llm`
+for Haiku-grade annotation) seeds the store from your whole session history.
+
+This layer runs silently and costs nothing. It also hedges the product against
+raw CoT becoming scarcer: typed moves extracted from summaries and tool-call
+sequences stay meaningful even where verbatim thinking isn't returned.
 
 ## Development
 
+- `live.js` — the live server (watcher + SSE on :4173)
 - `server.js` — MCP server (stdio; `npm run serve:http` for Streamable HTTP on :3001)
-- `mcp-app.html` + `src/mcp-app.js` — the widget (`App` from `@modelcontextprotocol/ext-apps`)
-- `npm run build` — bundles to `dist/mcp-app.html` (vite-plugin-singlefile)
-- `node test-client.js` — protocol smoke test over stdio
+- `src/map-core.js` — shared renderer between the live page and the MCP widget
+- `npm run build` — bundles `dist/{mcp-app,live,patterns}.html` (vite-plugin-singlefile)
+- `node test-client.js` / `node test-refine.js` — protocol and refiner tests
 
-## Status / roadmap
+## Roadmap — live-first
 
-Working: ingestion, host-model annotation loop, graph + timeline + replay + excerpts,
-verified inline rendering in Claude Code desktop, live mode (file watcher + SSE + heuristic
-annotation), pattern library across traces (catalog in `src/patterns.js`, store, backfill,
-library widget, pattern chips on maps), hybrid LLM refinement for live mode (instant
-heuristics upgraded by Haiku when a key is present). Next: predict-the-next-move
-replay, claude.ai deployment.
+The focus is the live experience: making "watch your agent think" excellent.
+
+1. **Multi-session dashboard** — follow several concurrent sessions, switch between them
+2. **Live annotation quality** — richer heuristics, incremental (per-turn) LLM refinement
+3. **Turn/tool context on the map** — show which tool calls each reasoning stretch drove
+4. **Packaging** — one-command install (npx / Claude Code plugin), auto-start
+5. **claude.ai deployment** — hosted HTTP mode for non-local use
+
+Deferred, not deleted: the learning direction (predict-the-next-move replay, spaced
+pattern review). The trace store and pattern engine keep collecting so that door
+stays open.
 
 MIT licensed.
