@@ -8,6 +8,7 @@ es.onmessage = (e) => {
   const data = JSON.parse(e.data);
   if (data.moves) {
     setTrace(data);
-    source.textContent = "\u25cf live — " + (data.session || "");
+    const q = data.quality === "llm" ? " \u00b7 \u2726 LLM-refined" : " \u00b7 heuristic";
+    source.textContent = "\u25cf live — " + (data.session || "") + q;
   }
 };

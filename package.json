@@ -10,6 +10,7 @@
     "backfill": "node backfill.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "@modelcontextprotocol/ext-apps": "^1.7.5",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "cors": "^2.8.6",

@@ -32,6 +32,18 @@ active (pin one with `FOLLOW=/path/to/session.jsonl npm run live`). New thinking
 blocks are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
 no API key, no latency. The widget and the live page share one renderer (`src/map-core.js`).
 
+### LLM-grade refinement (optional)
+
+Export `ANTHROPIC_API_KEY` before `npm run live` and the live map upgrades itself:
+heuristic moves appear instantly, then ~6s after the session goes quiet a Claude Haiku
+pass re-annotates the full trace with proper move boundaries, dependency edges, and
+verbatim excerpts (forced structured output, `src/llm-annotate.js`). The page badge
+shows `heuristic` vs `✦ LLM-refined`. Without a key everything works as before.
+Also upgrades the pattern-library corpus: `npm run backfill -- --llm`.
+Model override: `COT_REFINE_MODEL` (default `claude-haiku-4-5`, ~$1/$5 per MTok).
+
+Privacy note: refinement sends thinking text to the Anthropic API under your key.
+
 ## Pattern library
 
 Every rendered or live-watched trace is saved to `~/.claude/cot-maps/traces/`. The
@@ -68,7 +80,8 @@ Restart Claude Code and ask for a reasoning map.
 Working: ingestion, host-model annotation loop, graph + timeline + replay + excerpts,
 verified inline rendering in Claude Code desktop, live mode (file watcher + SSE + heuristic
 annotation), pattern library across traces (catalog in `src/patterns.js`, store, backfill,
-library widget, pattern chips on maps). Next: predict-the-next-move replay, LLM-grade
-annotation for live mode, claude.ai deployment.
+library widget, pattern chips on maps), hybrid LLM refinement for live mode (instant
+heuristics upgraded by Haiku when a key is present). Next: predict-the-next-move
+replay, claude.ai deployment.
 
 MIT licensed.

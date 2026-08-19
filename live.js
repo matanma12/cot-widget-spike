@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { annotateBlock, newAnnotationState } from "./src/annotate.js";
 import { detectPatterns } from "./src/patterns.js";
 import { saveTrace } from "./src/store.js";
+import { refineTrace, llmAvailable } from "./src/llm-annotate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
@@ -28,8 +29,39 @@ function freshTrace(file) {
     offset: 0,
     buf: "",
     state: newAnnotationState(),
-    trace: { task: "Live session", source: file.replace(os.homedir(), "~"), moves: [] },
+    rawBlocks: [],
+    refinedUpTo: 0,
+    refining: false,
+    trace: { task: "Live session", source: file.replace(os.homedir(), "~"), moves: [], quality: "heuristic" },
   };
+}
+
+async function runRefine(session) {
+  if (!llmAvailable || session.refining) return;
+  const n = session.rawBlocks.length;
+  if (n === 0 || n === session.refinedUpTo) return;
+  session.refining = true;
+  try {
+    const moves = await refineTrace(session.trace.task, session.rawBlocks);
+    if (active !== session) return;
+    session.trace.moves = moves;
+    session.trace.quality = "llm";
+    session.trace.patterns = detectPatterns(moves);
+    session.refinedUpTo = n;
+    broadcast();
+    saveTrace(session.trace).catch(() => {});
+    console.error(`[live] refined ${n} blocks -> ${moves.length} moves via LLM`);
+  } catch (e) {
+    console.error("[live] refine failed, keeping heuristic:", e.message);
+  } finally {
+    session.refining = false;
+    if (active === session && session.rawBlocks.length > session.refinedUpTo) scheduleRefine(session);
+  }
+}
+
+function scheduleRefine(session) {
+  clearTimeout(session.refineTimer);
+  session.refineTimer = setTimeout(() => runRefine(session), 6000);
 }
 
 async function consume(file) {
@@ -62,7 +94,9 @@ async function consume(file) {
     } else if (o.type === "assistant") {
       for (const b of o.message?.content || []) {
         if (b.type === "thinking" && b.thinking?.trim()) {
+          active.rawBlocks.push(b.thinking.trim());
           active.trace.moves.push(...annotateBlock(b.thinking, active.state));
+          active.trace.quality = "heuristic";
           changed = true;
         }
       }
@@ -71,6 +105,7 @@ async function consume(file) {
   if (changed) {
     active.trace.patterns = detectPatterns(active.trace.moves);
     broadcast();
+    scheduleRefine(active);
     clearTimeout(active.saveTimer);
     if (active.trace.moves.length) {
       active.saveTimer = setTimeout(() => saveTrace(active.trace).catch(() => {}), 2000);
