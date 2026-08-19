@@ -32,6 +32,17 @@ active (pin one with `FOLLOW=/path/to/session.jsonl npm run live`). New thinking
 blocks are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
 no API key, no latency. The widget and the live page share one renderer (`src/map-core.js`).
 
+## Pattern library
+
+Every rendered or live-watched trace is saved to `~/.claude/cot-maps/traces/`. The
+library mines them for named reasoning shapes — evidence loop, hypothesis elimination,
+verify-before-commit, and anti-patterns like leap-of-faith — each with a learning note
+and real examples from your own sessions.
+
+- Ask Claude: *"show my reasoning pattern library"* (inline widget via `show_pattern_library`)
+- Seed it from your whole session history: `npm run backfill`
+- Pattern chips on every reasoning map highlight where a pattern occurs — click to see the span
+
 ## Install
 
 Requires Node 18+.
@@ -56,7 +67,8 @@ Restart Claude Code and ask for a reasoning map.
 
 Working: ingestion, host-model annotation loop, graph + timeline + replay + excerpts,
 verified inline rendering in Claude Code desktop, live mode (file watcher + SSE + heuristic
-annotation). Next: pattern library across traces, predict-the-next-move replay,
-LLM-grade annotation for live mode, claude.ai deployment.
+annotation), pattern library across traces (catalog in `src/patterns.js`, store, backfill,
+library widget, pattern chips on maps). Next: predict-the-next-move replay, LLM-grade
+annotation for live mode, claude.ai deployment.
 
 MIT licensed.

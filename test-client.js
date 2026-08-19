@@ -30,3 +30,21 @@ console.log("MAP structured moves:", map.structuredContent?.moves?.length, "| te
 const demo = await client.callTool({ name: "show_reasoning_map", arguments: {} });
 console.log("DEMO fallback moves:", demo.structuredContent?.moves?.length);
 await client.close();
+
+// pattern library (appended v0.4 checks)
+const client2 = new Client({ name: "spike-test-2", version: "0.0.3" });
+await client2.connect(new StdioClientTransport({ command: "node", args: ["server.js"] }));
+const lib = await client2.callTool({ name: "show_pattern_library", arguments: {} });
+console.log("LIBRARY text:\n" + lib.content[0].text);
+console.log("LIBRARY traceCount:", lib.structuredContent?.traceCount, "| patterns:", lib.structuredContent?.patterns?.length);
+const withPat = await client2.callTool({ name: "show_reasoning_map", arguments: {
+  task: "pattern test", source: "pattern-test",
+  moves: [
+    { type: "framing", summary: "Frame", excerpt: "a" },
+    { type: "hypothesis", summary: "H1", excerpt: "b" },
+    { type: "verification", summary: "Check", excerpt: "c" },
+    { type: "conclusion", summary: "Done", excerpt: "d" },
+  ],
+}});
+console.log("MAP patterns:", withPat.structuredContent?.patterns?.map((p) => p.name));
+await client2.close();

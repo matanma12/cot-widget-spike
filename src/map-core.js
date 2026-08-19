@@ -109,6 +109,27 @@ function render() {
     tl.appendChild(seg);
   });
 
+  const pats = document.getElementById("patterns");
+  if (pats) {
+    pats.innerHTML = "";
+    let active = null;
+    (trace.patterns || []).forEach((p) => {
+      const chip = document.createElement("button");
+      chip.className = "pat" + (p.anti ? " anti" : "");
+      chip.textContent = p.name + (p.spans.length > 1 ? " \u00d7" + p.spans.length : "");
+      chip.addEventListener("click", () => {
+        if (active === p) { active = null; chip.classList.remove("on"); highlightSpan(-1, -1); return; }
+        active = p;
+        pats.querySelectorAll(".pat").forEach((c) => c.classList.remove("on"));
+        chip.classList.add("on");
+        const [a, b] = p.spans[0];
+        highlightSpan(a, b);
+        select(a, true);
+      });
+      pats.appendChild(chip);
+    });
+  }
+
   const legend = document.getElementById("legend");
   legend.innerHTML = "";
   Object.keys(counts).forEach((t) => {
@@ -138,6 +159,21 @@ function applyReveal() {
   document.querySelectorAll(".node").forEach((g) => g.classList.toggle("dim", +g.dataset.i >= revealed));
   document.querySelectorAll(".edge").forEach((p) => p.classList.toggle("dim", +p.dataset.to >= revealed));
   document.querySelectorAll("#timeline div").forEach((d) => d.classList.toggle("dim", +d.dataset.i >= revealed));
+}
+
+function highlightSpan(a, b) {
+  document.querySelectorAll(".node").forEach((g) => {
+    const i = +g.dataset.i;
+    g.classList.toggle("dim", a >= 0 && (i < a || i > b));
+  });
+  document.querySelectorAll(".edge").forEach((p) => {
+    const i = +p.dataset.to;
+    p.classList.toggle("dim", a >= 0 && (i < a || i > b));
+  });
+  document.querySelectorAll("#timeline div").forEach((d) => {
+    const i = +d.dataset.i;
+    d.classList.toggle("dim", a >= 0 && (i < a || i > b));
+  });
 }
 
 function stopTimer() { if (timer) { clearInterval(timer); timer = null; document.getElementById("replay").innerHTML = "&#9654; Replay"; } }

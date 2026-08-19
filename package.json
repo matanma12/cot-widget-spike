@@ -3,10 +3,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "rm -rf dist && INPUT=mcp-app.html vite build && INPUT=live.html vite build",
+    "build": "rm -rf dist && INPUT=mcp-app.html vite build && INPUT=live.html vite build && INPUT=patterns.html vite build",
     "serve": "node server.js",
     "serve:http": "node server.js --http",
-    "live": "node live.js"
+    "live": "node live.js",
+    "backfill": "node backfill.js"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.5",

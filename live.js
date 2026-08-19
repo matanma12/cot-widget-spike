@@ -5,6 +5,8 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { annotateBlock, newAnnotationState } from "./src/annotate.js";
+import { detectPatterns } from "./src/patterns.js";
+import { saveTrace } from "./src/store.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
@@ -66,7 +68,14 @@ async function consume(file) {
       }
     }
   }
-  if (changed) broadcast();
+  if (changed) {
+    active.trace.patterns = detectPatterns(active.trace.moves);
+    broadcast();
+    clearTimeout(active.saveTimer);
+    if (active.trace.moves.length) {
+      active.saveTimer = setTimeout(() => saveTrace(active.trace).catch(() => {}), 2000);
+    }
+  }
 }
 
 async function newestSessionFile() {

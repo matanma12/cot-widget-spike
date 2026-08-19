@@ -7,6 +7,8 @@ import {
   RESOURCE_MIME_TYPE,
 } from "@modelcontextprotocol/ext-apps/server";
 import { z } from "zod";
+import { detectPatterns, aggregate } from "./src/patterns.js";
+import { saveTrace, loadTraces } from "./src/store.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
@@ -17,6 +19,7 @@ const PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
 
 const server = new McpServer({ name: "CoT Reasoning Map", version: "0.2.0" });
 const resourceUri = "ui://cot-spike/mcp-app.html";
+const patternsResourceUri = "ui://cot-spike/patterns.html";
 
 const MOVE_TYPES = [
   "framing", "decomposition", "hypothesis", "verification",
@@ -173,7 +176,9 @@ registerAppTool(
     _meta: { ui: { resourceUri } },
   },
   async ({ task, source, moves }) => {
-    const trace = moves?.length ? { task: task || "Reasoning map", source: source || "", moves } : SAMPLE_TRACE;
+    const trace = moves?.length ? { task: task || "Reasoning map", source: source || "", moves } : { ...SAMPLE_TRACE };
+    trace.patterns = detectPatterns(trace.moves);
+    if (moves?.length) await saveTrace(trace).catch(() => {});
     const counts = {};
     for (const m of trace.moves) counts[m.type] = (counts[m.type] || 0) + 1;
     return {
@@ -182,10 +187,50 @@ registerAppTool(
         text:
           `Reasoning map for: ${trace.task}\n` +
           trace.moves.map((m, i) => `${i + 1}. [${m.type}] ${m.summary}`).join("\n") +
-          `\n(${trace.moves.length} moves: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")})`,
+          `\n(${trace.moves.length} moves: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")})` +
+        `\nPatterns: ${trace.patterns.map((p) => p.name).join(", ") || "none"}`,
       }],
       structuredContent: trace,
     };
+  },
+);
+
+registerAppTool(
+  server,
+  "show_pattern_library",
+  {
+    title: "Show pattern library",
+    description:
+      "Renders the cross-trace reasoning pattern library as an inline widget: named recurring reasoning shapes " +
+      "(evidence loop, hypothesis elimination, leap of faith, ...) with frequency across all stored traces, learning notes, and examples. " +
+      "Use when the user asks about their reasoning patterns, what they can learn across sessions, or the pattern library.",
+    inputSchema: {},
+    _meta: { ui: { resourceUri: patternsResourceUri } },
+  },
+  async () => {
+    const traces = await loadTraces();
+    const patterns = aggregate(traces);
+    const seen = patterns.filter((p) => p.traceCount > 0);
+    return {
+      content: [{
+        type: "text",
+        text:
+          `Pattern library across ${traces.length} stored traces:\n` +
+          (seen.map((p) => `- ${p.name}${p.anti ? " (anti-pattern)" : ""}: in ${p.traceCount} traces (${p.occurrences}x)`).join("\n") || "(no traces stored yet — render some reasoning maps first)"),
+      }],
+      structuredContent: { traceCount: traces.length, patterns },
+    };
+  },
+);
+
+registerAppResource(
+  server,
+  patternsResourceUri,
+  patternsResourceUri,
+  { mimeType: RESOURCE_MIME_TYPE },
+  async () => {
+    const html = await fs.readFile(path.join(__dirname, "dist", "patterns.html"), "utf-8");
+    return { contents: [{ uri: patternsResourceUri, mimeType: RESOURCE_MIME_TYPE, text: html }] };
   },
 );
 
