@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reasoning map — live</title>
+    <style>
+      :root { color-scheme: light dark; --line: #88878055; --panel: #8887801a; }
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 14px; background: transparent; }
+      header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+      h1 { font-size: 15px; font-weight: 600; margin: 0; }
+      #source { font-size: 11.5px; opacity: 0.55; }
+      #stats { font-size: 11.5px; opacity: 0.7; margin-bottom: 8px; }
+      #controls { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+      #controls button { font-size: 12px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; }
+      #controls button:hover { border-color: #888780; }
+      #graph-wrap { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+      svg { display: block; width: 100%; height: auto; }
+      .node { cursor: pointer; }
+      .node rect { fill: transparent; stroke-width: 1.6; rx: 9; transition: opacity .35s; }
+      .node text { font-size: 12px; font-family: system-ui, sans-serif; }
+      .node .idx { font-size: 10px; opacity: 0.55; }
+      .node.dim { opacity: 0.12; }
+      .node.sel rect { stroke-width: 3; }
+      .edge { fill: none; stroke-width: 1.4; transition: opacity .35s; }
+      .edge.dim { opacity: 0.06; }
+      #timeline { display: flex; gap: 3px; margin: 10px 0 2px; height: 14px; }
+      #timeline div { border-radius: 4px; cursor: pointer; min-width: 8px; transition: opacity .35s; }
+      #timeline div.dim { opacity: 0.15; }
+      #timeline div.sel { outline: 2px solid currentColor; }
+      #tl-label { font-size: 10.5px; opacity: 0.55; margin-bottom: 10px; }
+      #detail { border-left: 3px solid #888780; background: var(--panel); border-radius: 0 8px 8px 0; padding: 8px 12px; min-height: 52px; }
+      #detail .badge { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; border-radius: 5px; padding: 1px 7px; border: 1px solid; margin-right: 6px; }
+      #detail .sum { font-size: 12.5px; font-weight: 600; }
+      #detail .exc { font-size: 13px; line-height: 1.55; margin-top: 5px; opacity: 0.88; font-style: italic; }
+      #legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: 11px; opacity: 0.8; }
+      #legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; background: currentColor; }
+    </style>
+  </head>
+  <body>
+    <header><h1 id="task">Reasoning map</h1><span id="source"></span></header>
+    <div id="stats"></div>
+    <div id="controls">
+      <button id="replay">&#9654; Replay</button>
+      <button id="step">Step</button>
+      <button id="reset">Show all</button>
+    </div>
+    <div id="graph-wrap"></div>
+    <div id="timeline"></div>
+    <div id="tl-label">effort timeline — segment width = relative thinking effort</div>
+    <div id="detail"><span class="exc">Click a move (or press Replay) to walk through the reasoning with original chain-of-thought excerpts.</span></div>
+    <div id="legend"></div>
+    <script type="module" src="/src/live-view.js"></script>
+  </body>
+</html>

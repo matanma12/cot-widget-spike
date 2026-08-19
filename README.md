@@ -19,6 +19,19 @@ No API key needed: the Claude session you're already running does the annotation
 Say things like: *"map the reasoning of my last session"* or *"show me a demo reasoning map"*
 (no-args call renders sample data).
 
+## Live mode
+
+Watch the reasoning map grow in real time while a Claude Code session runs:
+
+```bash
+npm run live
+```
+
+Open http://localhost:4173. The watcher follows whichever session is most recently
+active (pin one with `FOLLOW=/path/to/session.jsonl npm run live`). New thinking
+blocks are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
+no API key, no latency. The widget and the live page share one renderer (`src/map-core.js`).
+
 ## Install
 
 Requires Node 18+.
@@ -42,7 +55,8 @@ Restart Claude Code and ask for a reasoning map.
 ## Status / roadmap
 
 Working: ingestion, host-model annotation loop, graph + timeline + replay + excerpts,
-verified inline rendering in Claude Code desktop. Next: live session following via hooks,
-pattern library across traces, predict-the-next-move replay, claude.ai deployment.
+verified inline rendering in Claude Code desktop, live mode (file watcher + SSE + heuristic
+annotation). Next: pattern library across traces, predict-the-next-move replay,
+LLM-grade annotation for live mode, claude.ai deployment.
 
 MIT licensed.

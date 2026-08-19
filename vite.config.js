@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [viteSingleFile()],
   build: {
     outDir: "dist",
+    emptyOutDir: false,
     rollupOptions: { input: process.env.INPUT }
   }
 });
