@@ -37,9 +37,9 @@ Privacy note: refinement sends thinking text to the Anthropic API under your key
 Requires Node 18+.
 
 ```bash
-git clone https://github.com/matanma12/cot-widget-spike.git
-cd cot-widget-spike
-npm install && npm run build
+git clone https://github.com/matanma12/reasoning-map.git
+cd reasoning-map
+npm install
 npm run live
 ```
 
@@ -75,7 +75,7 @@ sequences stay meaningful even where verbatim thinking isn't returned.
 - `live.js` — the live server (watcher + SSE on :4173)
 - `server.js` — MCP server (stdio; `npm run serve:http` for Streamable HTTP on :3001)
 - `src/map-core.js` — shared renderer between the live page and the MCP widget
-- `npm run build` — bundles `dist/{mcp-app,live,patterns}.html` (vite-plugin-singlefile)
+- `npm run build` — bundles (auto-runs before `npm run live`) `dist/{mcp-app,live,patterns}.html` (vite-plugin-singlefile)
 - `node test-client.js` / `node test-refine.js` — protocol and refiner tests
 
 ## Roadmap — live-first
