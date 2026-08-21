@@ -6,6 +6,13 @@
     <style>
       :root { color-scheme: light dark; --line: #88878055; --panel: #8887801a; }
       body { font-family: system-ui, sans-serif; margin: 0; padding: 14px; background: transparent; }
+      #session-strip { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+      #session-strip .sess { display: flex; align-items: center; gap: 7px; max-width: 230px; font-size: 12px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; }
+      #session-strip .sess .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #session-strip .sess .dot { width: 7px; height: 7px; border-radius: 50%; background: #888780; flex: none; }
+      #session-strip .sess .dot.hot { background: #1d9e75; }
+      #session-strip .sess .n { opacity: 0.55; font-size: 10.5px; flex: none; }
+      #session-strip .sess.sel { border-color: #7f77dd; outline: 1px solid #7f77dd; }
       header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
       h1 { font-size: 15px; font-weight: 600; margin: 0; }
       #source { font-size: 11.5px; opacity: 0.55; }
@@ -42,6 +49,7 @@
     </style>
   </head>
   <body>
+    <div id="session-strip"></div>
     <header><h1 id="task">Reasoning map</h1><span id="source"></span></header>
     <div id="stats"></div>
     <div id="controls">

@@ -15,10 +15,12 @@ becomes watchable — no configuration inside Claude Code, no API key required.
 npm run live
 ```
 
-Open http://localhost:4173. A file watcher on `~/.claude/projects` follows whichever
-session is most recently active and streams new thinking blocks to the page over SSE.
-Moves are typed instantly by a cue-based heuristic annotator (`src/annotate.js`) —
-zero latency, zero cost. Pin a specific session with
+Open http://localhost:4173. A file watcher on `~/.claude/projects` tracks every
+recently active session and streams new thinking blocks to the page over SSE. The
+**session strip** at the top shows each session with its task, activity dot, and move
+count — click one to pin it, or stay on **⚡ Auto** to always follow the most recently
+active session. Moves are typed instantly by a cue-based heuristic annotator
+(`src/annotate.js`) — zero latency, zero cost. Restrict the watcher to one file with
 `FOLLOW=/path/to/session.jsonl npm run live`.
 
 ### LLM-grade refinement (optional)
@@ -82,7 +84,7 @@ sequences stay meaningful even where verbatim thinking isn't returned.
 
 The focus is the live experience: making "watch your agent think" excellent.
 
-1. **Multi-session dashboard** — follow several concurrent sessions, switch between them
+1. ~~Multi-session dashboard~~ — shipped: session strip, pin/auto follow
 2. **Live annotation quality** — richer heuristics, incremental (per-turn) LLM refinement
 3. **Turn/tool context on the map** — show which tool calls each reasoning stretch drove
 4. **Packaging** — one-command install (npx / Claude Code plugin), auto-start
